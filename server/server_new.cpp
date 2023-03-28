@@ -154,7 +154,10 @@ private:
             }
             else
             {
-                send_message(buffer, client_socket);
+                std::string mes;
+                mes = "client" + std::to_string((int)client_socket) + std::string(buffer);
+
+                send_message(mes.data(), client_socket);
             }
         }
     }

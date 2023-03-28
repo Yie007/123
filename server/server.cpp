@@ -54,7 +54,7 @@ bool server_impl::send_message_to(char *str, int target)
     return true;
 }
 
-void *send_message_to__(char *message, int curr, server_impl inst)
+void *send_message_to__(const char *message, int curr, server_impl inst)
 {
     pthread_mutex_lock(&clients_mutex);
     if (send(curr, message, strlen(message), 0) == -1)
@@ -64,7 +64,7 @@ void *send_message_to__(char *message, int curr, server_impl inst)
     pthread_mutex_unlock(&clients_mutex);
 }
 
-void *send_message_except__(char *message, int curr, server_impl inst)
+void *send_message_except__(const char *message, int curr, server_impl inst)
 {
     pthread_mutex_lock(&clients_mutex);
     for (int i = 0; i < inst.num_clients; i++)
@@ -82,46 +82,40 @@ void *send_message_except__(char *message, int curr, server_impl inst)
     }
     pthread_mutex_unlock(&clients_mutex);
 }
-struct handle_client_info
-{
-    int client_socket;
-    int *clients;
-    server_impl inst;
-};
+
 void *handle_client__(void *info)
 {
     handle_client_info argv = *(handle_client_info *)info;
-    server_impl inst = argv.inst;
+    server_impl *inst = argv.inst;
     int *clients = argv.clients;
     int socketfd = argv.client_socket;
-    char buffer[inst.BUFFER_SIZE];
-
+    char buffer[inst->BUFFER_SIZE];
     pthread_mutex_lock(&clients_mutex);
-    clients[inst.num_clients++] = socketfd;
+    clients[inst->num_clients++] = socketfd;
     pthread_mutex_unlock(&clients_mutex);
 
     printf("Client %d connected.\n", socketfd);
 
     while (1)
     {
-        memset(buffer, 0, inst.BUFFER_SIZE);
+        memset(buffer, 0, inst->BUFFER_SIZE);
 
         /*
         recv(sockfd, buf, len, flags)：从已经连接的套接字 sockfd 接收最多长度为 len 的数据，并将其存储到缓冲区 buf 中，可选的标志位 flags 用于指定接收方式.该函数的返回值是接收到的字节数，如果出现错误则会返回一个负数。
         */
-        int recv_res = recv(socketfd, buffer, inst.BUFFER_SIZE, 0);
+        int recv_res = recv(socketfd, buffer, inst->BUFFER_SIZE, 0);
         if (recv_res <= 0)
         {
             // 如果收到了消息，但是消息却没有东西，或者是收到了错误信息，那么认为这个客户端无法使用，则退出。
             pthread_mutex_lock(&clients_mutex);
-            for (int i = 0; i < inst.num_clients; i++)
+            for (int i = 0; i < inst->num_clients; i++)
             {
                 if (clients[i] == socketfd)
                 {
-                    inst.num_clients--;
-                    while (i < inst.num_clients)
+                    inst->num_clients--;
+                    while (i < inst->num_clients)
                     {
-                        inst.clients[i] = inst.clients[i + 1];
+                        inst->clients[i] = inst->clients[i + 1];
                         i++;
                     }
                     break;
@@ -134,7 +128,10 @@ void *handle_client__(void *info)
         }
         else
         {
-            send_message_except__(buffer, socketfd, inst);
+            std::string mes;
+            mes = "client" + std::to_string((int)socketfd) + std::string(buffer) + '\n';
+            std::cout << mes;
+            send_message_except__(mes.data(), socketfd, *inst);
         }
     }
 }
@@ -156,7 +153,7 @@ bool server_impl::init()
 
     server_address.sin_family = AF_INET;         // 将地址族（Address Family）设为 IPv4。
     server_address.sin_addr.s_addr = INADDR_ANY; // 将 IP 地址设为 INADDR_ANY，表示可以监听任何可用的本地网络接口。
-    server_address.sin_port = htons(8888);       // 将端口号设为 8888，并使用 htons() 函数将其转换为网络字节序
+    server_address.sin_port = htons(12345);      // 将端口号设为 8888，并使用 htons() 函数将其转换为网络字节序
 
     /*
     int bind(int __fd, const struct sockaddr *__addr, socklen_t __len)
@@ -178,7 +175,7 @@ bool server_impl::init()
         return false;
     }
 
-    printf("Server started. Listening on port 8888...\n");
+    printf("Server started. Listening on port 12345...\n");
 
     while (1)
     {
@@ -199,7 +196,12 @@ bool server_impl::init()
         }
 
         // 创建线程处理客户端请求
-        if (pthread_create(&new_thread, NULL, handle_client__, &client_socket) != 0)
+        handle_client_info info;
+        info.client_socket = client_socket;
+        info.clients = this->clients;
+        info.inst = this;
+
+        if (pthread_create(&new_thread, NULL, handle_client__, &info) != 0)
         {
             perror("pthread_create error");
             continue;

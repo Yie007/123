@@ -31,11 +31,18 @@ public:
     bool send_message_except(char *str, int target);
 };
 
+struct handle_client_info
+{
+    int client_socket;
+    int *clients;
+    server_impl *inst;
+    handle_client_info(){};
+};
 // 内部函数指针，不作为对外接口
 void *handle_client__(void *info);
 // 内部函数指针，不作为对外接口
-void *send_message_to__(char *message, int curr, server_impl inst);
+void *send_message_to__(const char *message, int curr, server_impl inst);
 // 内部函数指针，不作为对外接口
-void *send_message_except__(char *message, int curr, server_impl inst);
+void *send_message_except__(const char *message, int curr, server_impl inst);
 
 #endif
