@@ -1,0 +1,5 @@
+﻿  Demo.cpp
+D:\C++\InetDemo\Demo.cpp(9,18): warning C4018: “>”: 有符号/无符号不匹配
+  main.cpp
+  正在生成代码...
+  InetDemo.vcxproj -> D:\C++\InetDemo\Debug\InetDemo.exe
