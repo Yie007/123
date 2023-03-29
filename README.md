@@ -8,7 +8,7 @@
 ## 客户端设计
 
 ```c++
-#define DEFAULT_BUFLEN 512   // 输入缓冲的最大长度,单位是字节
+#define DEFAULT_BUFLEN 1024   // 输入缓冲的最大长度,单位是字节
 
 class Client
 {
