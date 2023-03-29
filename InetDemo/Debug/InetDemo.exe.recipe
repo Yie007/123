@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\C++\InetDemo\Debug\InetDemo.exe</FullPath>
+      <FullPath>D:\C++\SocketLearn\InetDemo\Debug\InetDemo.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
