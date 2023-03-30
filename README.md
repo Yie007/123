@@ -253,16 +253,23 @@ public:
 ```C++
 void Demo::sendRequest(const char* ip, const char* port,const char* request)
 {
+	int iResult;
 	Client it;
-	it.init();
-	it.connectTo(ip, port);
+	iResult = it.init();
+	if (iResult == -1)
+		return;
+	iResult = it.connectTo(ip, port);
+	if (iResult == -1)
+		return;
 	//以这种方式创建锁，在创建的时候自动枷锁==加锁
 	unique_lock<mutex>unilock(m);
 	//当打印队列已满的时候，停止发送请求
 	while (Q.size() > MAX_CACHE_LENGTH)
 		condInput.wait(unilock);//等待唤醒，自动调用m.unlock()
 	//如果被唤醒，自动调用m.lock()
-	it.sendMessage(request);
+	iResult = it.sendMessage(request);
+	if (iResult == -1)
+		return;
 	it.close();
 
 	CacheData temp;
@@ -312,6 +319,8 @@ void Demo::powerOff()
 {
 	flag = false;
 }
+
+
 ```
 
 ### 测试代码
