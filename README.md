@@ -379,4 +379,90 @@ public:
     bool send_message_except(char *str, int target);
 };
 ```
+## 测试代码
+```c++
+
+int main()
+	{
+
+	server_impl sv(10, 1024);
+	sv.init();
+	return 0;
+}
+
+```
+
+## 服务端设计
+服务端调用init()方法之后，会在主线程开启监听模式。每当收到一个client连接，就会创建一个线程去处理跟它的通信。
+
+
+## 具体流程
+
+### 创建socket
+
+```C++
+    /*
+    socket(int domain,int type,int protocol)->success?(A non-negative integer):(-1);
+    */
+	server_socket = socket(AF_INET, SOCK_STREAM, 0);
+ 
+
+```
+
+### 调用bind，绑定套接字与服务器端口号
+```C++
+   	server_address.sin_family = AF_INET;         // 将地址族（Address Family）设为 IPv4。
+    server_address.sin_addr.s_addr = INADDR_ANY; // 将 IP 地址设为 INADDR_ANY，表示可以监听任何可用的本地网络接口。
+    server_address.sin_port = htons(12345);      // 将端口号设为 8888，并使用 htons() 函数将其转换为网络字节序
+	bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address));
+    /*
+    int bind(int __fd, const struct sockaddr *__addr, socklen_t __len)
+    bind函数告诉内核将 addr 中的服务器套接字地址和套接字描述符 sockfd 联系起来。参数addrlen就是sizeof(sockaddr in)。
+    */
+
+```
+
+### 调用listen，开始监听
+```C++
+	listen(server_socket, MAX_CLIENTS);
+```
+
+### 处理客户端请求,并且创建线程
+```C++
+client_socket = accept(server_socket, (struct sockaddr *)&client_address, (socklen_t *)&client_len);
+
+pthread_create(&new_thread, NULL, handle_client__, &info)
+
+
+
+
+
+```
+
+
+
+### 通信
+```C++
+        /*
+        recv(sockfd, buf, len, flags)：从已经连接的套接字 sockfd 接收最多长度为 len 的数据，并将其存储到缓冲区 buf 中，可选的标志位 flags 用于指定接收方式.该函数的返回值是接收到的字节数，如果出现错误则会返回一个负数。
+        */
+		recv(socketfd, buffer, inst->BUFFER_SIZE, 0);
+
+		/*
+		send(sockfd, buf, len, flags)：向已经连接的套接字 sockfd 发送长度为 len 的数据，数据存储在缓冲区 buf 中，可选的标志位 flags 用于指定发送方式。
+		*/
+
+		send(inst.clients[i], message, strlen(message), 0)
+
+```
+
+## 总结：
+1. 这次网络编程，我们都没有使用高度封装的外部库，使用的都是较为底层的api，所以可以看到很多C风格的代码。
+2. 邝业年同学负责的是windows下的客户端编程，我负责的是linux服务器下的socket编程。很显然，windows下的编程更加不方便，因为要调用的是winsock.h的库，又要调用动态链接库，在环境配置上要下很大的功夫。
+3. 因为本人之前已经接触过一些网络编程，所以这次项目在网络编程上耗费的时间不多，但是两个人都在多线程的处理上耗费了比较大的功夫，包括什么时候线程结束，什么时候使用stdout资源等等。另一个难点是，面向对象的重构，在微软文档上面有面向过程的服务端、客户端代码，但是要提高其可用性，还需要经过层层封装。
+4. 本次封装的api仅仅限于字符串的传输，无法支持二进制文件的传输。
+
+## 项目地址
+
+https://github.com/Yie007/SocketLearn.git
 
